@@ -1,0 +1,60 @@
+# Fichiers de base de données
+*.db
+*.sqlite
+*.sqlite3
+
+# Fichiers de logs
+*.log
+logs/
+
+# Dossiers de rapports générés
+reports/
+
+# Environnements virtuels
+venv/
+env/
+.venv/
+
+# Fichiers Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Fichiers de distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Fichiers d'installation
+pip-delete-this-directory.txt
+
+# Fichiers temporaires
+*.tmp
+*.temp
+
+# Fichiers de système
+.DS_Store
+Thumbs.db
+
+# Fichiers d'IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Fichiers de configuration personnelle
+config.local.py
