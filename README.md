@@ -188,4 +188,5 @@ Propriétaire - Usage interne uniquement
 ---
 
 **Note**: Assurez-vous que la pointeuse ZKTeco est correctement configurée et accessible sur le réseau avant utilisation.
-bouba
+
+bouba1
