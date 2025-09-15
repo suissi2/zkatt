@@ -38,6 +38,11 @@ class ZKManager:
             self.zk.disconnect()
             logger.info("Déconnexion de la pointeuse ZKTeco")
 
+    def is_connected(self):
+        """Vérifier si la connexion à la pointeuse est active."""
+        # Vérifie si l'objet zk existe et si la propriété is_connect est vraie
+        return self.zk and self.zk.is_connect
+
     def get_attendance_data(self):
         """Récupérer les données de pointage (entrée/sortie)"""
         try:

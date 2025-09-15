@@ -114,7 +114,7 @@ class AttendanceApp:
                 return
             
             # Vérifier la connexion et tenter de reconnecter si nécessaire
-            if not self.zk_manager.zk:
+            if not self.zk_manager.is_connected():
                 logger.info("Tentative de reconnexion pour la synchronisation automatique...")
                 if not self._connect_to_zk():
                     logger.warning("Impossible de se connecter à la pointeuse pour la synchronisation automatique")
@@ -122,14 +122,21 @@ class AttendanceApp:
                     return
             
             # Synchroniser les utilisateurs
-            user_sync_result = self._synchronize_users()
+            user_status, user_count = self._synchronize_users()
             
             # Synchroniser la présence
-            attendance_sync_result = self._synchronize_attendance()
+            attendance_status, attendance_count = self._synchronize_attendance()
+            
+            total_synced = user_count + attendance_count
+            overall_status = 'success'
+            if 'error' in (user_status, attendance_status):
+                overall_status = 'error'
+            elif 'warning' in (user_status, attendance_status):
+                overall_status = 'warning'
             
             logger.info("Synchronisation automatique terminée")
-            db_manager.add_sync_log('auto_sync', user_sync_result + attendance_sync_result, 'success', 
-                                   f'Utilisateurs: {user_sync_result}, Présence: {attendance_sync_result}')
+            db_manager.add_sync_log('auto_sync', total_synced, overall_status, 
+                                   f'Utilisateurs: {user_count} ({user_status}), Présence: {attendance_count} ({attendance_status})')
             
         except Exception as e:
             logger.error(f"Erreur lors de la synchronisation automatique: {e}")
@@ -138,55 +145,55 @@ class AttendanceApp:
     def _synchronize_users(self):
         """Synchroniser les utilisateurs depuis la pointeuse"""
         try:
-            if self.zk_manager.zk:
+            if self.zk_manager.is_connected():
                 users = self.zk_manager.import_users()
                 if users:
                     imported_count = employee_manager.import_users_from_zk(users)
                     logger.info(f"{imported_count} utilisateurs synchronisés depuis la pointeuse")
-                    db_manager.add_sync_log('users', imported_count, 'success')
-                    return imported_count
+                    db_manager.add_sync_log('users', imported_count, 'success', f'{imported_count} utilisateurs importés')
+                    return 'success', imported_count
                 else:
                     logger.warning("Aucun utilisateur trouvé sur la pointeuse")
                     db_manager.add_sync_log('users', 0, 'warning', 'Aucun utilisateur trouvé')
-                    return 0
+                    return 'warning', 0
             else:
                 logger.warning("Impossible de synchroniser les utilisateurs: pointeuse non connectée")
                 db_manager.add_sync_log('users', 0, 'error', 'Pointeuse non connectée')
-                return 0
+                return 'error', 0
                 
         except Exception as e:
             logger.error(f"Erreur lors de la synchronisation des utilisateurs: {e}")
             db_manager.add_sync_log('users', 0, 'error', str(e))
-            return 0
+            return 'error', 0
     
     def _synchronize_attendance(self):
         """Synchroniser les données de présence depuis la pointeuse"""
         try:
-            if self.zk_manager.zk:
+            if self.zk_manager.is_connected():
                 attendance_data = self.zk_manager.get_attendance_data()
                 if attendance_data:
                     synced_count = attendance_manager.sync_attendance_data(attendance_data)
                     logger.info(f"{synced_count} logs de présence synchronisés depuis la pointeuse")
-                    db_manager.add_sync_log('attendance', synced_count, 'success')
-                    return synced_count
+                    db_manager.add_sync_log('attendance', synced_count, 'success', f'{synced_count} pointages importés')
+                    return 'success', synced_count
                 else:
                     logger.warning("Aucune donnée de présence trouvée sur la pointeuse")
                     db_manager.add_sync_log('attendance', 0, 'warning', 'Aucune donnée de présence')
-                    return 0
+                    return 'warning', 0
             else:
                 logger.warning("Impossible de synchroniser la présence: pointeuse non connectée")
                 db_manager.add_sync_log('attendance', 0, 'error', 'Pointeuse non connectée')
-                return 0
+                return 'error', 0
                 
         except Exception as e:
             logger.error(f"Erreur lors de la synchronisation de la présence: {e}")
             db_manager.add_sync_log('attendance', 0, 'error', str(e))
-            return 0
+            return 'error', 0
 
     def synchronize_users_with_confirmation(self):
         """Synchroniser les utilisateurs avec confirmation de l'utilisateur"""
         try:
-            if not self.zk_manager.zk:
+            if not self.zk_manager.is_connected():
                 logger.warning("Impossible de synchroniser les utilisateurs: pointeuse non connectée")
                 return False
             
@@ -214,7 +221,7 @@ class AttendanceApp:
     def synchronize_attendance_with_confirmation(self):
         """Synchroniser la présence avec confirmation de l'utilisateur"""
         try:
-            if not self.zk_manager.zk:
+            if not self.zk_manager.is_connected():
                 logger.warning("Impossible de synchroniser la présence: pointeuse non connectée")
                 return False
             
@@ -257,7 +264,7 @@ class AttendanceApp:
             self.running = False
             
             # Déconnecter la pointeuse
-            if self.zk_manager.zk:
+            if self.zk_manager.is_connected():
                 self.zk_manager.disconnect()
             
             # Fermer la base de données

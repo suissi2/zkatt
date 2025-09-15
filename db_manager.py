@@ -149,12 +149,9 @@ class DatabaseManager:
             
             query += " ORDER BY e.last_name, e.first_name"
             cursor.execute(query, params)
-            rows = cursor.fetchall()
-            # Convert rows to a list of dictionaries
-            employees = [
-                {**row} for row in rows
-            ]
-            return employees
+            # row_factory de la connexion est déjà défini sur sqlite3.Row,
+            # donc les résultats sont déjà accessibles comme des dictionnaires.
+            return cursor.fetchall()
         except sqlite3.Error as e:
             logger.error(f"Erreur lors de la récupération des employés: {e}")
             return []
